@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator Jatah WIN</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;background:#f4f6fa;color:#172033;margin:0;padding:16px}
+main{max-width:720px;margin:auto}h1{font-size:30px;margin:8px 0}.sub{color:#667085;line-height:1.5}
+.card{background:#fff;border:1px solid #e0e6ef;border-radius:16px;padding:18px;margin:14px 0}
+.field{margin:0 0 22px}.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+label{font-weight:bold;font-size:14px}.value{font-weight:bold;font-size:18px}
+input[type=range]{width:100%;accent-color:#335eea}input[type=number]{width:100%;padding:13px;border:1px solid #ccd5e2;border-radius:10px;font-size:17px;box-sizing:border-box}
+.months{display:flex;gap:7px}.months button{flex:1;padding:11px 3px;background:#fff;border:1px solid #ccd5e2;border-radius:9px;font-weight:bold}.months button.active{background:#eaf0ff;border-color:#335eea;color:#2347bd}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{background:#f3f6fb;border-radius:12px;padding:13px;min-height:82px}.stat.primary{background:#eaf0ff}.k{font-size:12px;color:#667085}.v{font-size:26px;font-weight:bold;margin-top:8px;overflow-wrap:anywhere}.primary .v{color:#2347bd}
+.status{margin-top:13px;padding:13px;border-radius:10px;font-size:14px;line-height:1.5}.ok{background:#e8f7ef;color:#17663d}.no{background:#fff0e8;color:#8c3b12}.neutral{background:#f1f3f7;color:#475467}.note{font-size:12px;color:#748096;line-height:1.55}.formula{background:#f3f6fb;border-radius:9px;padding:12px;font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+@media(min-width:600px){.stats{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<main>
+<div style="font-size:12px;letter-spacing:2px;color:#667085;font-weight:bold">MOMENTUM TOOLS</div>
+<h1>Kalkulator Jatah WIN</h1>
+<p class="sub">Hitung kebutuhan WIN untuk mencapai WR target akhir bulan. Hasil diperbarui saat angka diubah.</p>
+<div class="card">
+ <div class="field">
+  <div class="row"><label for="wr">WR average historis</label><span class="value" id="wrLabel">56%</span></div>
+  <input id="wr" type="range" min="1" max="100" value="56" oninput="recalc()">
+  <div class="row" style="font-size:12px;color:#8791a3"><span>1%</span><span>100%</span></div>
+ </div>
+ <div class="field">
+  <div class="row"><label for="wins">Jumlah WIN saat ini</label></div>
+  <input id="wins" type="number" min="0" step="1" value="7" oninput="recalc()">
+ </div>
+ <div class="field">
+  <div class="row"><label for="elapsed">Hari yang sudah berjalan</label><span class="value"><span id="elapsedLabel">20</span> hari</span></div>
+  <input id="elapsed" type="range" min="1" max="31" value="20" oninput="recalc()">
+  <div class="row" style="font-size:12px;color:#8791a3"><span>Hari 1</span><span id="elapsedMax">Hari 31</span></div>
+ </div>
+ <div class="field">
+  <div class="row"><label>Jumlah hari dalam bulan</label></div>
+  <div class="months">
+   <button id="d28" type="button" onclick="setDays(28)">28 hari</button>
+   <button id="d29" type="button" onclick="setDays(29)">29 hari</button>
+   <button id="d30" type="button" onclick="setDays(30)">30 hari</button>
+   <button id="d31" class="active" type="button" onclick="setDays(31)">31 hari</button>
+  </div>
+ </div>
+</div>
+<div class="card">
+ <div class="stats">
+  <div class="stat"><div class="k">WR saat ini</div><div class="v" id="currentWR">35.00%</div></div>
+  <div class="stat"><div class="k">Target total WIN</div><div class="v" id="targetWins">18</div></div>
+  <div class="stat primary"><div class="k">WIN tambahan dibutuhkan</div><div class="v" id="neededWins">11</div></div>
+  <div class="stat"><div class="k">Sisa hari</div><div class="v" id="remainingDays">11</div></div>
+ </div>
+ <div id="status" class="status ok" role="status">Target secara matematis masih dapat dicapai.</div>
+ <p id="detail" class="note">Target akhir bulan dihitung dari WR target dikali jumlah hari, dibulatkan ke atas.</p>
+</div>
+<div class="card">
+ <b>Logika perhitungan</b>
+ <div class="formula">Target total WIN = pembulatan ke atas (WR average × jumlah hari)<br>WIN tambahan = target total WIN − WIN saat ini<br>WR saat ini = WIN saat ini ÷ hari berjalan × 100%</div>
+ <p class="note">Asumsi satu hasil valid per hari. Hari yang belum memiliki hasil tidak otomatis dihitung LOSE. Kalkulator menghitung target matematis, bukan memprediksi atau menjamin hasil berikutnya.</p>
+</div>
+<p class="note" style="text-align:center">Kalkulator mandiri. Tidak mengirim data ke server.</p>
+</main>
+<script type="text/javascript">
+var monthDays = 31;
+function recalc() {
+ var wr = document.getElementById('wr');
+ var winsInput = document.getElementById('wins');
+ var elapsedInput = document.getElementById('elapsed');
+ var rate = Number(wr.value) / 100;
+ var wins = Math.max(0, Math.floor(Number(winsInput.value) || 0));
+ var elapsed = Math.max(1, Math.min(monthDays, Number(elapsedInput.value) || 1));
+ var target = Math.ceil(rate * monthDays);
+ var needed = Math.max(0, target - wins);
+ var remaining = monthDays - elapsed;
+ document.getElementById('wrLabel').innerHTML = wr.value + '%';
+ document.getElementById('elapsedLabel').innerHTML = elapsed;
+ document.getElementById('elapsedMax').innerHTML = 'Hari ' + monthDays;
+ document.getElementById('currentWR').innerHTML = (wins / elapsed * 100).toFixed(2) + '%';
+ document.getElementById('targetWins').innerHTML = target;
+ document.getElementById('neededWins').innerHTML = needed;
+ document.getElementById('remainingDays').innerHTML = remaining;
+ var status = document.getElementById('status');
+ if (wins > elapsed) {
+  status.className = 'status neutral';
+  status.innerHTML = 'Periksa input: jumlah WIN tidak boleh lebih besar daripada hari berjalan jika hanya ada satu hasil per hari.';
+ } else if (needed === 0) {
+  status.className = 'status ok';
+  status.innerHTML = 'Target jumlah WIN akhir bulan sudah tercapai berdasarkan WR target.';
+ } else if (needed <= remaining) {
+  status.className = 'status ok';
+  status.innerHTML = 'Secara matematis, target masih dapat dicapai: dibutuhkan ' + needed + ' WIN dari ' + remaining + ' hari tersisa. Ini target hitungan, bukan prediksi hasil.';
+ } else {
+  status.className = 'status no';
+  status.innerHTML = 'Target tidak dapat dicapai pada akhir bulan dengan input ini: perlu ' + needed + ' WIN, tetapi hanya tersisa ' + remaining + ' hari.';
+ }
+ document.getElementById('detail').innerHTML = 'Dengan WR target ' + wr.value + '% dan ' + monthDays + ' hari, target total minimal ' + target + ' WIN. Saat ini ' + wins + ' WIN dari ' + elapsed + ' hari berjalan.';
+}
+function setDays(n) {
+ monthDays = n;
+ var ids = [28,29,30,31];
+ for (var i=0; i<ids.length; i++) {
+  document.getElementById('d'+ids[i]).className = (ids[i] === n ? 'active' : '');
+ }
+ var elapsed = document.getElementById('elapsed');
+ elapsed.max = n;
+ if (Number(elapsed.value) > n) elapsed.value = n;
+ recalc();
+}
+recalc();
+</script>
+</body>
+</html>
